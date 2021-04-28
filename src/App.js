@@ -16,12 +16,13 @@ function App() {
     success: false
   });
 
-  const provider = new firebase.auth.GoogleAuthProvider();
+  const googleProvider = new firebase.auth.GoogleAuthProvider();
+  const fbProvider = new firebase.auth.FacebookAuthProvider();
   const handleSignIn = () => {
     console.log("Clicked signin");
     firebase
       .auth()
-      .signInWithPopup(provider)
+      .signInWithPopup(googleProvider)
       .then(result => {
         console.log(result);
         const { displayName, email } = result.user;
@@ -73,6 +74,7 @@ function App() {
           // const user = userCredential.user;
           // console.log(user)
           // ...
+          updateUserName(user.name);
         })
         .catch(error => {
           const newUserInfo = { ...user };
@@ -90,12 +92,13 @@ function App() {
       firebase
         .auth()
         .signInWithEmailAndPassword(user.email, user.password)
-        .then(userCredential => {
+        .then(res => {
           // Signed in
           const newUserInfo = { ...user };
           newUserInfo.error = "";
           newUserInfo.success = true;
           setUser(newUserInfo);
+          console.log("sign in user info", res.user);
           // var user = userCredential.user;
           // ...
         })
@@ -131,6 +134,53 @@ function App() {
     }
   };
 
+  const updateUserName = name => {
+    const user = firebase.auth().currentUser;
+
+    user
+      .updateProfile({
+        displayName: name
+        // photoURL: "https://example.com/jane-q-user/profile.jpg"
+      })
+      .then(res => {
+        // Update successful.
+        console.log("User Name updated successfully");
+      })
+      .catch(err => {
+        // An error happened.
+        console.log("User Name Error", err.message);
+      });
+  };
+
+  const handleFbSignIn = () => {
+    console.log("fb clicked")
+    firebase
+      .auth()
+      .signInWithPopup(fbProvider)
+      .then(result => {
+        // /** @type {firebase.auth.OAuthCredential} */
+        const credential = result.credential;
+
+        // The signed-in user info.
+        const user = result.user;
+
+        // This gives you a Facebook Access Token. You can use it to access the Facebook API.
+        const accessToken = credential.accessToken;
+        console.log("FB USER", user);
+        // ...
+      })
+      .catch(error => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.email;
+        // The firebase.auth.AuthCredential type that was used.
+        const credential = error.credential;
+console.log(errorMessage)
+        // ...
+      });
+  };
   return (
     <div className="App">
       {user.isSignedIn ? (
@@ -138,6 +188,8 @@ function App() {
       ) : (
         <button onClick={handleSignIn}>Sign In</button>
       )}
+      <br />
+      <button onClick={handleFbSignIn}>Sign in using Facebook</button>
       {user.isSignedIn && (
         <div>
           <p>Welcome : {user.name}</p>
@@ -180,7 +232,7 @@ function App() {
           required
         />
         <br />
-        <input type="submit" value="submit" />
+        <input type="submit" value={newUser ? "SignUp" : "SignIn"} />
       </form>
       <p style={{ color: "red" }}>{user.error}</p>
       {user.success && (
