@@ -3,7 +3,13 @@ import "./App.css";
 import firebase from "firebase";
 import "firebase/auth";
 import firebaseConfig from "./firebase.config";
-firebase.initializeApp(firebaseConfig);
+// firebase.initializeApp(firebaseConfig);
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+} else {
+  firebase.app(); // if already initialized, use that one
+}
 
 function App() {
   const [newUser, setNewUser] = useState(false);
@@ -18,6 +24,7 @@ function App() {
 
   const googleProvider = new firebase.auth.GoogleAuthProvider();
   const fbProvider = new firebase.auth.FacebookAuthProvider();
+  var ghProvider = new firebase.auth.GithubAuthProvider();
   const handleSignIn = () => {
     console.log("Clicked signin");
     firebase
@@ -153,7 +160,7 @@ function App() {
   };
 
   const handleFbSignIn = () => {
-    console.log("fb clicked")
+    console.log("fb clicked");
     firebase
       .auth()
       .signInWithPopup(fbProvider)
@@ -177,7 +184,37 @@ function App() {
         const email = error.email;
         // The firebase.auth.AuthCredential type that was used.
         const credential = error.credential;
-console.log(errorMessage)
+        console.log(errorMessage);
+        // ...
+      });
+  };
+
+  const handleGhSignIn = () => {
+    firebase
+      .auth()
+      .signInWithPopup(ghProvider)
+      .then(result => {
+        // /** @type {firebase.auth.OAuthCredential} */
+        var credential = result.credential;
+
+        // This gives you a GitHub Access Token. You can use it to access the GitHub API.
+        var token = credential.accessToken;
+
+        // The signed-in user info.
+        var user = result.user;
+        setUser(user);
+        console.log("github user", user);
+        // ...
+      })
+      .catch(error => {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        // The email of the user's account used.
+        var email = error.email;
+        // The firebase.auth.AuthCredential type that was used.
+        var credential = error.credential;
+        console.log("github error", errorCode, errorMessage, email, credential);
         // ...
       });
   };
@@ -190,6 +227,8 @@ console.log(errorMessage)
       )}
       <br />
       <button onClick={handleFbSignIn}>Sign in using Facebook</button>
+      <br />
+      <button onClick={handleGhSignIn}>Sign in using GitHub</button>
       {user.isSignedIn && (
         <div>
           <p>Welcome : {user.name}</p>
